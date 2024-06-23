@@ -9,7 +9,7 @@ This project is a simple CRUD application that allows users to search and track 
 
 ## Project Features
 - [x] Search for food items
-- [ ] View food items
+- [x] View food items
 - [ ] Add food items to daily intake
 - [ ] View daily intake
 - [ ] Delete food items from daily intake

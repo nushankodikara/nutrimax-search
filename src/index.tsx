@@ -3,6 +3,7 @@ import { html } from '@elysiajs/html';
 import { HomePage } from "./pages/homepage";
 import { SearchSector } from "./components/searchsector";
 import { HomeSector } from "./components/homesector";
+import { ItemPage } from "./pages/itempage";
 
 const api_key = process.env.API_KEY;
 const app = new Elysia()
@@ -58,10 +59,104 @@ const app = new Elysia()
             .catch(err => {
                 console.error(err);
             });
+
+        const nutrientMap = data.foodNutrients.reduce((acc: { [x: string]: { id: string; number: number; rank: number; unitName: string; amount: number; }; }, nutrient: { nutrient: { name: string; id: string; number: number; rank: number; unitName: string; }; amount: number; }) => {
+            try {
+                const nutrientName = nutrient.nutrient.name;
+                acc[nutrientName] = {
+                    id: nutrient.nutrient.id,
+                    number: nutrient.nutrient.number || 0,
+                    rank: nutrient.nutrient.rank || 0,
+                    unitName: nutrient.nutrient.unitName || "No Record",
+                    amount: nutrient.amount || 0
+                };
+                return acc;
+            } catch (err) {
+                console.error(err);
+            }
+        }, {});
+
+        // console.log(nutrientMap);
+        // Check all the macro nutrient data available
+        if (!nutrientMap.Energy) {
+            nutrientMap.Energy = {
+                amount: 0,
+                unitName: "No Record"
+            };
+        }
+
+        if (!nutrientMap.Protein) {
+            nutrientMap.Protein = {
+                amount: 0,
+                unitName: "No Record"
+            };
+        }
+
+        if (!nutrientMap["Carbohydrate, by difference"]) {
+            nutrientMap["Carbohydrate, by difference"] = {
+                amount: 0,
+                unitName: "No Record"
+            };
+        }
+
+        if (!nutrientMap["Total lipid (fat)"]) {
+            nutrientMap["Total lipid (fat)"] = {
+                amount: 0,
+                unitName: "No Record"
+            };
+        }
+
+        return (
+            <ItemPage
+                foodName={data.description}
+                brandName={data.dataType === "Branded" && data.brandName ? data.brandName : "Generic"}
+                servingSize={data.servingSize}
+                servingSizeUnit={data.servingSizeUnit}
+                energy={nutrientMap.Energy.amount}
+                energyUnit={nutrientMap.Energy.unitName}
+                proteins={nutrientMap.Protein.amount}
+                proteinsUnit={nutrientMap.Protein.unitName}
+                carbs={nutrientMap["Carbohydrate, by difference"].amount}
+                carbsUnit={nutrientMap["Carbohydrate, by difference"].unitName}
+                fats={nutrientMap["Total lipid (fat)"].amount}
+                fatsUnit={nutrientMap["Total lipid (fat)"].unitName}
+            />)
     }, {
         params: t.Object({
             id: t.String()
         })
+    })
+    .get("/calNutrients", async ({ query }: {
+        query: {
+            foodWeight: number;
+            proteins: number;
+            proteinsUnit: string;
+            carbs: number;
+            carbsUnit: string;
+            fats: number;
+            fatsUnit: string;
+        }
+    }) => {
+        console.log(query)
+        return (
+            <>
+                <div class="flex flex-col justify-center items-center text-2xl">
+                    <i class="fa-solid fa-calculator" />
+                </div>
+                <div class="flex flex-col">
+                    <p class="text-sm">Proteins</p>
+                    <p class="font-thin text-xs">{(query.foodWeight * query.proteins / 100).toFixed(2)}{query.proteinsUnit}</p>
+                </div>
+                <div class="flex flex-col">
+                    <p class="text-sm">Carbs</p>
+                    <p class="font-thin text-xs">{(query.foodWeight * query.carbs / 100).toFixed(2)}{query.carbsUnit}</p>
+                </div>
+                <div class="flex flex-col">
+                    <p class="text-sm">Fats</p>
+                    <p class="font-thin text-xs">{(query.foodWeight * query.fats / 100).toFixed(2)}{query.fatsUnit}</p>
+                </div>
+            </>
+        )
     })
     .listen(3000);
 
