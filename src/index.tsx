@@ -76,7 +76,6 @@ const app = new Elysia()
             }
         }, {});
 
-        // console.log(nutrientMap);
         // Check all the macro nutrient data available
         if (!nutrientMap.Energy) {
             nutrientMap.Energy = {
@@ -137,7 +136,6 @@ const app = new Elysia()
             fatsUnit: string;
         }
     }) => {
-        console.log(query)
         return (
             <>
                 <div class="flex flex-col justify-center items-center text-2xl">
@@ -161,5 +159,5 @@ const app = new Elysia()
     .listen(3000);
 
 console.log(
-    `🦊 Elysia is running at ${app.server?.hostname}: ${app.server?.port}`
+    `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
 );
