@@ -1,0 +1,10 @@
+services:
+  nutrimax-search:
+    image: nushankodi/nutrimax-search:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - USDA_API_KEY=<your-usda-api-key>
+      - DB_URL=<your-db-url>
+      - DB_AUTH_TOKEN=<your-db-auth-token>
+      - SALT_ROUNDS=<your-salt-rounds>
