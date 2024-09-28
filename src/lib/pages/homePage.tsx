@@ -1,6 +1,6 @@
-import { GreetingsCard } from "../components/greetingscard";
+import { GreetingsCard } from "../components/greetingsCard";
 import { Head } from "../components/head";
-import { MobNav } from "../components/mobnav";
+import { MobNav } from "../components/mobNav";
 
 export const HomePage = () => {
     return (

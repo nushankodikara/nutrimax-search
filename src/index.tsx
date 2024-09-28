@@ -1,16 +1,108 @@
 import { Elysia, t } from "elysia";
 import { html } from '@elysiajs/html';
-import { HomePage } from "./pages/homepage";
-import { SearchSector } from "./components/searchsector";
-import { HomeSector } from "./components/homesector";
-import { ItemPage } from "./pages/itempage";
+import { HomePage } from "./lib/pages/homePage";
+import { SearchSector } from "./lib/components/searchSector";
+import { HomeSector } from "./lib/components/homeSector";
+import { ItemPage } from "./lib/pages/itemPage";
+import { LoginPage } from "./lib/pages/loginPage";
+import { SignUpPage } from "./lib/pages/signupPage";
+import { SignUpForm } from "./lib/components/signupForm";
+import { db } from "./utils/drizzle";
+import { users } from "./lib/db/schema";
+import { eq } from "drizzle-orm";
+import { LoginForm } from "./lib/components/loginForm";
+import bcrypt from "bcrypt";
 
-const api_key = process.env.API_KEY;
+const api_key = process.env.USDA_API_KEY;
+const salt_rounds = process.env.SALT_ROUNDS;
+
 const app = new Elysia()
     .use(html())
     .get("/", () =>
         (<HomePage />)
     )
+    .get("/login", () =>
+        (<LoginPage />)
+    )
+    .get("/signup", () =>
+        (<SignUpPage />)
+    )
+    .post("/signup/user", async ({ body }) => {
+        const { name, email, password } = body;
+
+        // Check if all fields are provided
+        if (!name || !email || !password) {
+            return <SignUpForm success={null} errors={{ name: "All fields are required.", email: "All fields are required", password: "All fields are required" }} />;
+
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return <SignUpForm success={null} errors={{ name: null, email: "Invalid email format.", password: null }} />;
+        }
+
+        // Validate password strength
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+        if (!passwordRegex.test(password)) {
+            return <SignUpForm success={null} errors={{ name: null, email: null, password: "Password must be at least 6 characters long and include at least one lowercase letter, one uppercase letter, and one number." }} />;
+        }
+
+        // Check if the email is already in use
+        const existingUser = await db.select().from(users).where(eq(users.email, email));
+        console.log(existingUser);
+        if (existingUser.length > 0) {
+            return <SignUpForm success={null} errors={{ name: null, email: "Email already in use.", password: null }} />;
+        }
+
+        try {
+            await bcrypt.hash(password, parseInt(salt_rounds || "10")).then(async (hash: string) => {
+                await db.insert(users).values({
+                    name,
+                    email,
+                    password: hash
+                });
+            });
+        } catch (err) {
+            console.error(err);
+            return <SignUpForm success={null} errors={{ name: null, email: null, password: "Something went wrong." }} />;
+        }
+
+        return <LoginForm success="Account created successfully. Please login." errors={{ email: null, password: null }} />;
+    }, {
+        body: t.Object({
+            name: t.String(),
+            email: t.String(),
+            password: t.String()
+        })
+    })
+    .post("/login/user", async ({ body, set }) => {
+        const { email, password } = body;
+
+        // Check if all fields are provided
+        if (!email || !password) {
+            return <LoginForm success={null} errors={{ email: "All fields are required.", password: "All fields are required" }} />;
+        }
+
+        const user = await db.select().from(users).where(eq(users.email, email));
+        if (user.length === 0) {
+            return <LoginForm success={null} errors={{ email: "User does not exist.", password: null }} />;
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user[0].password);
+        if (!passwordMatch) {
+            return <LoginForm success={null} errors={{ email: null, password: "Incorrect password." }} />;
+        }
+
+        set.headers['hx-redirect'] = '/';
+        return <LoginForm success="Login successful." errors={{ email: null, password: null }} />;
+    }, {
+        body: t.Object({
+            email: t.String(),
+            password: t.String()
+        })
+
+    })
     .post("/homeSector", () => (
         <HomeSector />
     ))

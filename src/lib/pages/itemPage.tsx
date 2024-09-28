@@ -1,5 +1,5 @@
 import { Head } from "../components/head";
-import { MobNav } from "../components/mobnav";
+import { MobNav } from "../components/mobNav";
 
 export const ItemPage = ({ foodName = "Error", brandName = "Generic", servingSize = 0, servingSizeUnit = "g", energy = 0, energyUnit = "KCAL", proteins = 0, proteinsUnit = "g", carbs = 0, carbsUnit = "g", fats = 0, fatsUnit = "g", calProtein = 0, calProteinUnit = "g", calCarbs = 0, calCarbsUnit = "g", calFats = 0, calFatsUnit = "g" }: {
     foodName: string,
