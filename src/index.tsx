@@ -12,15 +12,26 @@ import { users } from "./lib/db/schema";
 import { eq } from "drizzle-orm";
 import { LoginForm } from "./lib/components/loginForm";
 import bcrypt from "bcrypt";
+import jwt from "@elysiajs/jwt";
 
 const api_key = process.env.USDA_API_KEY;
 const salt_rounds = process.env.SALT_ROUNDS;
 
 const app = new Elysia()
     .use(html())
-    .get("/", () =>
-        (<HomePage />)
-    )
+    .use(jwt({
+        name: "jwt",
+        secret: process.env.JWT_SECRET || "nutrimax-secret-key",
+        exp: "1d"
+    }))
+    .get("/", async ({ cookie: { auth }, jwt }) => {
+        const profile = await jwt.verify(auth.value) as { name: string, email: string };
+        if (!profile) {
+            return (<LoginPage />)
+        }
+
+        return (<HomePage profile={profile} />)
+    })
     .get("/login", () =>
         (<LoginPage />)
     )
@@ -68,7 +79,7 @@ const app = new Elysia()
             return <SignUpForm success={null} errors={{ name: null, email: null, password: "Something went wrong." }} />;
         }
 
-        return <LoginForm success="Account created successfully. Please login." errors={{ email: null, password: null }} />;
+        return <LoginForm success="Account created successfully. Please login." errors={{ email: null, password: null, major: null }} />;
     }, {
         body: t.Object({
             name: t.String(),
@@ -76,26 +87,28 @@ const app = new Elysia()
             password: t.String()
         })
     })
-    .post("/login/user", async ({ body, set }) => {
+    .post("/login/user", async ({ body, set, jwt, cookie: { auth } }) => {
         const { email, password } = body;
 
         // Check if all fields are provided
         if (!email || !password) {
-            return <LoginForm success={null} errors={{ email: "All fields are required.", password: "All fields are required" }} />;
+            return <LoginForm success={null} errors={{ email: null, password: null, major: "All the fields need to be filled." }} />;
         }
 
         const user = await db.select().from(users).where(eq(users.email, email));
         if (user.length === 0) {
-            return <LoginForm success={null} errors={{ email: "User does not exist.", password: null }} />;
+            return <LoginForm success={null} errors={{ email: null, password: null, major: "User does not exist. Please Register." }} />;
         }
 
         const passwordMatch = await bcrypt.compare(password, user[0].password);
         if (!passwordMatch) {
-            return <LoginForm success={null} errors={{ email: null, password: "Incorrect password." }} />;
+            return <LoginForm success={null} errors={{ email: null, password: "Incorrect password.", major: null }} />;
         }
-
+        auth.set({
+            value: await jwt.sign({ name: user[0].name, email: user[0].email })
+        })
         set.headers['hx-redirect'] = '/';
-        return <LoginForm success="Login successful." errors={{ email: null, password: null }} />;
+        return <LoginForm success="Login successful." errors={{ email: null, password: null, major: null }} />;
     }, {
         body: t.Object({
             email: t.String(),

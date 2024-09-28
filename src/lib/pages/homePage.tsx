@@ -2,13 +2,13 @@ import { GreetingsCard } from "../components/greetingsCard";
 import { Head } from "../components/head";
 import { MobNav } from "../components/mobNav";
 
-export const HomePage = () => {
+export const HomePage = ({ profile }: { profile: { name: string, email: string } }) => {
     return (
         <html lang='en'>
             <Head title="Nutrimax" />
             <body class="min-h-screen bg-gradient-to-t from-[#F3FF47] via-white to-white bg-fixed">
                 <MobNav />
-                <GreetingsCard />
+                <GreetingsCard name={profile.name} />
                 <div
                     id='dynamicSector'
                     hx-post="/homeSector"

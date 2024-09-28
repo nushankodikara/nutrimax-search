@@ -2,6 +2,7 @@ interface LoginFormProps {
     errors: {
         email: string | null;
         password: string | null;
+        major: string | null;
     };
     success: string | null;
 }
@@ -15,6 +16,7 @@ export const LoginForm = ({ errors, success }: LoginFormProps) => {
             </a>
             <div class="text-sm font-light text-[#6B7280] pb-8 mx-auto">Log in to your account</div>
             {success && <div class="text-green-500 text-sm text-center">{success}</div>}
+            {errors.major && <div class="text-red-500 text-sm text-center">{errors.major}</div>}
             <form class="flex flex-col" data-bitwarden-watching="1" hx-post="/login/user" hx-target="#login-form" hx-swap="outerHTML">
                 <div class="pb-2">
                     <label for="email" class="block mb-2 text-sm font-medium text-[#111827]">Email</label>
